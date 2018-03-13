@@ -212,7 +212,7 @@ def download_track(track,num,save_path=Args.out,name_mask=None,cover_id3=None):
     if not Args.quiet:
         print_track_info(track)
     try:
-        download_file(get_track_url(track),track_path,num)
+        download_file(get_track_url(track),track_path)
     except FileExistsError as e:
         logging.info(e)
     except URLError as e:
@@ -244,7 +244,7 @@ def parse_url(url,num):
             'URL {} points to artists similar to {}. '
             'Please select one and give appropriate URL.').format(url,artist_info(**info)['artist']['name']))
     if 'track' in info:
-        download_track(track_info(**info)['track'])
+        download_track(track_info(**info)['track'],num)
     else:
         raise YmdlWrongUrlError
 def main(url,num):
