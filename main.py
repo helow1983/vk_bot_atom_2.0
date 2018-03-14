@@ -47,7 +47,7 @@ for event in longpoll.listen():
         if event.text=="":
             t=threading.Thread(target=write,args=(event.user_id,"Запрещённное сообщение."))
         elif event.text=="/stop" and event.user_id==self_id:
-            print("Остановка.\nБыло отправлено "+str(vk_counter+yandex_counter)+" голосовых сообщений.")
+            print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+yandex_counter))
             stop()
         elif event.text[0:3].lower()=="ym ":
             yandex_counter+=1
