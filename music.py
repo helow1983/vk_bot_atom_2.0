@@ -1,4 +1,4 @@
-import logging,os,urllib.request,urllib.parse,json,mimetypes,time
+import logging,os,urllib.request,urllib.parse,json,mimetypes
 from urllib.error import URLError
 from mutagen import id3,mp3
 from hashlib import md5
@@ -7,22 +7,14 @@ class YmdlError(Exception):
 class YmdlWrongUrlError(YmdlError,ValueError):
     pass
 class Args:
-    album_name=None
-    also=False
-    batch_file=None
     cover_id3_size=300
     cover_size=700
     genre=False
-    m3u=False
     out="."
-    quiet=True
     track_name=None
-    volume_prefix='CD'
-LINE='='*79
 YM_URL='https://music.yandex.ru'
 YM_TRACK_SRC_INFO=('https://storage.mds.yandex.net/download-info/{storageDir}/2?format=json')
 YM_TRACK_INFO=YM_URL+'/handlers/track.jsx?track={track}'
-YM_ALBUM_INFO=YM_URL+'/handlers/album.jsx?album={album}'
 YM_ARTIST_INFO=YM_URL+'/handlers/artist.jsx?artist={artist}&what={what}'
 FLD_COMPOSERS='composers'
 FLD_TRACKNUM='trackNum'
@@ -36,6 +28,8 @@ FMT_YEAR='%y'
 FMT_LABEL='%l'
 DTN_SINGLE='%a - %t'
 COVER_SIZES=[30,40,50,75,80,100,150,160,200,300,400,460,600,700,1000]
+_FNAME_TRANS={ord('"'): "''"}
+_FNAME_TRANS.update(str.maketrans('\\/*','--_','<>:|?'))
 def size_to_str(byte_size):
     size=byte_size/1024/1024
     for s in ('MB','GB','TB'):
@@ -43,23 +37,10 @@ def size_to_str(byte_size):
             break
         size/=1024
     return '{:.2f} {}'.format(size,s)
-def time_to_str(ms):
-    minutes,ms=divmod(ms,60000)
-    seconds=ms//1000
-    return '{}:{:02}'.format(minutes,seconds)
-_FNAME_TRANS={ord('"'): "''"}
-_FNAME_TRANS.update(str.maketrans('\\/*','--_','<>:|?'))
 def filename(s):
     return s.translate(_FNAME_TRANS).rstrip('. ')
 def make_extinf(track,file_path):
     return '#EXTINF:{},{} - {}\n{}\n'.format(track['durationMs']//1000,track['artists'],track['title'],file_path)
-def save_m3u(extinfs,save_path):
-    if not extinfs:
-        return
-    os.makedirs(save_path,exist_ok=True)
-    with open(os.path.join(save_path,'play.m3u8'),'w',encoding='utf-8-sig') as f:
-        f.write('#EXTM3U\n')
-        f.writelines(extinfs)
 def write_id3(mp3_file,track,cover=None):
     t=mp3.Open(mp3_file)
     if not t.tags:
@@ -85,15 +66,12 @@ def write_id3(mp3_file,track,cover=None):
         t_add(id3.APIC(encoding=3,desc='',mime=cover.mime,type=3,data=cover.data))
     t.tags.update_to_v23()
     t.save(v1=id3.ID3v1SaveOptions.CREATE,v2_version=3)
-_DL_CHUNK_SIZE=128*1024
-_DL_BAR_SIZE=40
-_DL_PART_EXT='.part'
 def download_file(url,save_as):
     file_dir,file_name=os.path.split(save_as)
     if os.path.exists(save_as):
         raise FileExistsError('{} already exists'.format(file_name))
     request=urllib.request.Request(url)
-    file_part=save_as+_DL_PART_EXT
+    file_part=save_as+'.part'
     if os.path.isfile(file_part):
         file_part_size=os.path.getsize(file_part)
         mode='ab'
@@ -104,50 +82,18 @@ def download_file(url,save_as):
     response=urllib.request.urlopen(request)
     file_size=file_part_size + int(response.getheader('Content-Length'))
     os.makedirs(file_dir,exist_ok=True)
-    info=('\r[{:<' + str(_DL_BAR_SIZE) + '}] '
+    info=('\r[{:< 40 }] '
           '{:>6.1%} ({} / '+size_to_str(file_size)+')')
     with open(file_part,mode) as f:
         while True:
-            chunk=response.read(_DL_CHUNK_SIZE)
+            chunk=response.read(128*1024)
             if not chunk:
-                if not Args.quiet:
-                    print()
                 break
             file_part_size+=len(chunk)
             percent=file_part_size/file_size
-            progressbar='#'*round(_DL_BAR_SIZE*percent)
-            if not Args.quiet:
-                print(info.format(progressbar,percent,size_to_str(file_part_size)),end='')
+            progressbar='#'*round(40*percent)
             f.write(chunk)
     os.rename(file_part,save_as)
-class AlbumCover:
-    def __init__(self,url):
-        with urllib.request.urlopen(url) as r:
-            self.data=r.read()
-            self.mime=r.getheader('Content-Type')
-        if self.mime=='image/jpeg':
-            self.extension='.jpg'
-        else:
-            self.extension=mimetypes.guess_extension(self.mime)
-    @classmethod
-    def download(cls,uri,size):
-        if size<=0:
-            return None
-        for n in COVER_SIZES:
-            if size<=n:
-                break
-        try:
-            return cls('https://'+uri.replace('%%','{0}x{0}'.format(n)))
-        except URLError as e:
-            logging.error('Can\'t download cover: %s',e)
-            return None
-    def save(self,path):
-        try:
-            os.makedirs(path,exist_ok=True)
-            with open(os.path.join(path,'cover' + self.extension),'wb') as f:
-                f.write(self.data)
-        except OSError as e:
-            logging.error('Can\'t save cover: %s',e)
 def _info_js(template):
     def info_loader(**kwargs):
         with urllib.request.urlopen(template.format(**kwargs),timeout=6) as r:
@@ -155,7 +101,6 @@ def _info_js(template):
     return info_loader
 track_src_info=_info_js(YM_TRACK_SRC_INFO)
 track_info=_info_js(YM_TRACK_INFO)
-album_info=_info_js(YM_ALBUM_INFO)
 artist_info=_info_js(YM_ARTIST_INFO)
 def get_track_url(track):
     info=track_src_info(**track)
@@ -172,14 +117,6 @@ def split_artists(all_artists):
         else:
             artists.append(a['name'])
     return ','.join(artists or composers),','.join(composers)
-def print_track_info(track):
-    info='{} ({})'.format(track['title'],time_to_str(track['durationMs']))
-    if FLD_TRACKNUM in track:
-        album=track['albums'][0]
-        info='[{}/{}] {}'.format(
-            track[FLD_TRACKNUM],album['trackCount'],info)
-    print(info)
-    print('by',track['artists'])
 def download_track(track,num,save_path=Args.out,name_mask=None,cover_id3=None):
     global track_name
     track['artists'],track[FLD_COMPOSERS]=split_artists(track['artists'])
@@ -209,8 +146,6 @@ def download_track(track,num,save_path=Args.out,name_mask=None,cover_id3=None):
     if not track_name.lower().endswith('.mp3'):
         track_name+='.mp3'
     track_path=os.path.join(save_path,track_name)
-    if not Args.quiet:
-        print_track_info(track)
     try:
         download_file(get_track_url(track),track_path)
     except FileExistsError as e:
@@ -218,10 +153,8 @@ def download_track(track,num,save_path=Args.out,name_mask=None,cover_id3=None):
     except URLError as e:
         logging.error('Can\'t download track: %s',e)
     else:
-        if not cover_id3 and 'coverUri' in album:
-            cover_id3=AlbumCover.download(album['coverUri'],Args.cover_id3_size)
         try:
-            write_id3(track_path,track,cover_id3)
+            write_id3(track_path,track)
         except OSError as e:
             logging.error('Can\'t write ID3: %s',e)
     return make_extinf(track,track_name)
@@ -249,13 +182,11 @@ def parse_url(url,num):
         raise YmdlWrongUrlError
 def main(url,num):
     logging.basicConfig(level=logging.INFO,format='%(levelname)s: %(message)s')
-    if Args.quiet:
-        logging.disable(logging.CRITICAL)
+    logging.disable(logging.CRITICAL)
     while True:
         try:
             parse_url(url,num)
-        except Exception as a:
-            print(a)
+        except:
             return "YmdlWrongUrlError"
         else:
             return track_name
