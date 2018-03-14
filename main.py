@@ -42,15 +42,16 @@ yandex_counter=0
 print("Запущено получение сообщений.\n")
 for event in longpoll.listen():
     if event.type==VkEventType.MESSAGE_NEW and event.to_me:
-        info=vk.method("users.get",{"user_id":event.user_id})[0]
-        print("{} {} написал: {}".format(info["first_name"],info["last_name"],event.text if event.text!="" else "<сообщение без текста>"))
+        info=vk.method("users.get",{"user_id":event.user_id,"fields":"sex"})[0]
+        print("{} {} написал{}: {}".format(info["first_name"],info["last_name"],"" if info["sex"]==2 else "а",event.text if event.text!="" else "<сообщение без текста>"))
         if event.text=="":
             t=threading.Thread(target=write,args=(event.user_id,"Запрещённное сообщение."))
         elif event.text=="/stop" and event.user_id==self_id:
+            print("Остановка.\nБыло отправлено "+str(vk_counter+yandex_counter)+" голосовых сообщений.")
             stop()
         elif event.text[0:3].lower()=="ym ":
             yandex_counter+=1
-            t=threading.Thread(target=ya_music,args=(event.user_id,event.text[3:],yandex_counter))
+            t=threading.Thread(target=ya_music,args=(event.user_id,event.text[3:]))
         elif event.text[0:3].lower()=="rv ":
             t=threading.Thread(target=write,args=(event.user_id,event.text[3:][::-1]))
         elif event.text[0:3].lower()=="vt ":

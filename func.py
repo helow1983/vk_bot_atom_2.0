@@ -86,8 +86,8 @@ def gtts(user_id,body,num):
     vk_file=str(num)+"vk.mp3"
     tts.save(vk_file)
     file_send(user_id,vk_file)
-def ya_music(user_id,body,num):
-    track=music.main(body,num)
+def ya_music(user_id,body):
+    track=music.main(body)
     if track=="YmdlWrongUrlError":
         write(user_id,"ym ошибка.")
     else:
