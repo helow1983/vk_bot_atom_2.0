@@ -1,4 +1,4 @@
-import logging,os,urllib.request,urllib.parse,json,mimetypes
+import logging,os,urllib.request,urllib.parse,json
 from urllib.error import URLError
 from mutagen import id3,mp3
 from hashlib import md5
@@ -7,8 +7,6 @@ class YmdlError(Exception):
 class YmdlWrongUrlError(YmdlError,ValueError):
     pass
 class Args:
-    cover_id3_size=300
-    cover_size=700
     genre=False
     out="."
     track_name=None
@@ -27,7 +25,6 @@ FMT_NTRACKS="%N"
 FMT_YEAR="%y"
 FMT_LABEL="%l"
 DTN_SINGLE="%a - %t"
-COVER_SIZES=[30,40,50,75,80,100,150,160,200,300,400,460,600,700,1000]
 _FNAME_TRANS={ord('"'): "''"}
 _FNAME_TRANS.update(str.maketrans("\\/*","--_","<>:|?"))
 def size_to_str(byte_size):
@@ -90,8 +87,6 @@ def download_file(url,save_as):
             if not chunk:
                 break
             file_part_size+=len(chunk)
-            percent=file_part_size/file_size
-            progressbar="#"*round(40*percent)
             f.write(chunk)
     os.rename(file_part,save_as)
 def _info_js(template):
@@ -117,7 +112,7 @@ def split_artists(all_artists):
         else:
             artists.append(a["name"])
     return ",".join(artists or composers),",".join(composers)
-def download_track(track,save_path=Args.out,name_mask=None,cover_id3=None):
+def download_track(track,save_path=Args.out,name_mask=None):
     global track_name
     track["artists"],track[FLD_COMPOSERS]=split_artists(track["artists"])
     if "version" in track:
@@ -186,8 +181,7 @@ def main(url):
     while True:
         try:
             parse_url(url)
-        except Exception as a:
-            print(a)
+        except:
             return "YmdlWrongUrlError"
         else:
             return track_name

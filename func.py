@@ -37,12 +37,10 @@ def file_send(user_id,name,music=False):
         except Exception as error:
             if str(error)=="[15] Access denied: User can't upload docs to this group":
                 print("Невозможно загрузить файл в ВК. Возомжно, в настройках группы -> разделы отключены документы.")
+                stop()
             else:
-                print(error)
-                os._exit(1)
-                print("Непредвиденная ошибка.")
+                print("Непредвиденная ошибка при отправке сообщения.")
             append_rm(new_name)
-            stop()
     else:
         if os.path.getsize(name)==0:
             write(user_id,"Запрещённое сообщение.")
@@ -54,10 +52,10 @@ def file_send(user_id,name,music=False):
             except Exception as error:
                 if str(error)=="[15] Access denied: User can't upload docs to this group":
                     print("Невозможно загрузить файл в ВК. Возможно, в настройках группы -> разделы отключены документы.")
+                    stop()
                 else:
-                    print("Непредвиденная ошибка.")
+                    print("Непредвиденная ошибка при отправке аудиосообщения.")
                 os.remove(name)
-                stop()
     owner_id=str(save["owner_id"])
     v_id=str(save["id"])
     if save["size"]==288:
