@@ -43,25 +43,31 @@ print("Запущено получение сообщений.\n")
 for event in longpoll.listen():
     if event.type==VkEventType.MESSAGE_NEW and event.to_me:
         info=vk.method("users.get",{"user_id":event.user_id,"fields":"sex"})[0]
-        print("{} {} написал{}: {}".format(info["first_name"],info["last_name"],"" if info["sex"]==2 else "а",event.text if event.text!="" else "<сообщение без текста>"))
-        if event.text=="":
-            t=threading.Thread(target=write,args=(event.user_id,"Запрещённное сообщение."))
-        elif event.text=="/stop" and event.user_id==self_id:
+        text=event.text.replace("&amp;","&").replace("&quot;",'"')
+        try:
+            print("{} {} написал{}: {}".format(info["first_name"],info["last_name"],"" if info["sex"]==2 else "а",text if text!="" else "<сообщение без текста>"))
+        except:
+            print("{} {} написал{}: {}".format(info["first_name"],info["last_name"],"" if info["sex"]==2 else "а","<неподдерживаемые символы>"))
+        if text=="":
+            t=threading.Thread(target=write,args=(event.user_id,"Запрещённое сообщение."))
+        elif text=="/stop" and event.user_id==self_id:
             print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+yandex_counter))
             stop()
-        elif event.text[0:3].lower()=="ym ":
+        elif text=="/stop" and event.user_id!=self_id:
+            t=threading.Thread(target=write,args=(event.user_id,"Недостаточно прав для выполнения данной команды."))
+        elif text[0:3].lower()=="ym ":
             yandex_counter+=1
-            t=threading.Thread(target=ya_music,args=(event.user_id,event.text[3:]))
-        elif event.text[0:3].lower()=="rv ":
-            t=threading.Thread(target=write,args=(event.user_id,event.text[3:][::-1]))
-        elif event.text[0:3].lower()=="vt ":
-            t=threading.Thread(target=virustotal,args=(event.user_id,event.text))
-        elif event.text[0:7].lower()=="rv_tts ":
+            t=threading.Thread(target=ya_music,args=(event.user_id,text[3:]))
+        elif text[0:3].lower()=="rv ":
+            t=threading.Thread(target=write,args=(event.user_id,text[3:][::-1]))
+        elif text[0:3].lower()=="vt ":
+            t=threading.Thread(target=virustotal,args=(event.user_id,text))
+        elif text[0:7].lower()=="rv_tts ":
             vk_counter+=1
-            t=threading.Thread(target=gtts,args=(event.user_id,event.text[7:][::-1],vk_counter))
-        elif event.text[0:3].lower()=="ex ":
-            t=threading.Thread(target=exchange,args=(event.user_id,event.text[3:].lower()))
+            t=threading.Thread(target=gtts,args=(event.user_id,text[7:][::-1],vk_counter))
+        elif text[0:3].lower()=="ex ":
+            t=threading.Thread(target=exchange,args=(event.user_id,text[3:].lower()))
         else:
             vk_counter+=1
-            t=threading.Thread(target=gtts,args=(event.user_id,event.text,vk_counter))
+            t=threading.Thread(target=gtts,args=(event.user_id,text,vk_counter))
         t.start()

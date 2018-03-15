@@ -27,17 +27,6 @@ FMT_LABEL="%l"
 DTN_SINGLE="%a - %t"
 _FNAME_TRANS={ord('"'): "''"}
 _FNAME_TRANS.update(str.maketrans("\\/*","--_","<>:|?"))
-def size_to_str(byte_size):
-    size=byte_size/1024/1024
-    for s in ("MB","GB","TB"):
-        if size<1024:
-            break
-        size/=1024
-    return "{:.2f} {}".format(size,s)
-def filename(s):
-    return s.translate(_FNAME_TRANS).rstrip(". ")
-def make_extinf(track,file_path):
-    return "#EXTINF:{},{} - {}\n{}\n".format(track["durationMs"]//1000,track["artists"],track["title"],file_path)
 def write_id3(mp3_file,track,cover=None):
     t=mp3.Open(mp3_file)
     if not t.tags:
@@ -71,13 +60,9 @@ def download_file(url,save_as):
     response=urllib.request.urlopen(request)
     os.makedirs(file_dir,exist_ok=True)
     info=("\r[{:< 40 }] "
-          "{:>6.1%} ({} / "+size_to_str(0)+")")
+          "{:>6.1%} ({} / 0.00 MB)")
     with open(save_as,"wb") as f:
-        while True:
-            chunk=response.read()
-            if not chunk:
-                break
-            f.write(chunk)
+        f.write(response.read())
 def _info_js(template):
     def info_loader(**kwargs):
         with urllib.request.urlopen(template.format(**kwargs),timeout=6) as r:
@@ -126,7 +111,7 @@ def download_track(track,save_path=Args.out,name_mask=None):
     fmt[FMT_LABEL]=",".join(l["name"] for l in album.get("labels",[]))
     for f,t in fmt.items():
         name_mask=name_mask.replace(f,t)
-    track_name=filename(name_mask)
+    track_name=name_mask.translate(_FNAME_TRANS).rstrip(". ")
     if not track_name.lower().endswith(".mp3"):
         track_name+=".mp3"
     track_path=os.path.join(save_path,track_name)
@@ -141,7 +126,7 @@ def download_track(track,save_path=Args.out,name_mask=None):
             write_id3(track_path,track)
         except OSError as e:
             logging.error("Can\'t write ID3: %s",e)
-    return make_extinf(track,track_name)
+    return "#EXTINF:{},{} - {}\n{}\n".format(track["durationMs"]//1000,track["artists"],track["title"],track_name)
 def parse_url(url):
     url_info=urllib.parse.urlsplit(url)
     if not (url_info.scheme in ("http","https") and url_info.netloc.startswith("music.yandex")):

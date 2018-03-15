@@ -33,7 +33,7 @@ def file_send(user_id,name,music=False):
     if music==True:
         append_rm(name)
         a+=1
-        new_name="2"+str(a)+name.replace(".mp3",".ogg")
+        new_name=str(a)+name.replace(".mp3",".ogg")
         os.system('ffmpeg -n -loglevel quiet -i "'+name+'" -ac 1 "'+new_name+'"')
         try:
             save=upload.audio_message(new_name,group_id=self_group_id)[0]
@@ -78,7 +78,10 @@ def gtts(user_id,body,num):
         if json.json()["message"]=="API key is invalid":
             print("Неправильный ключ доступа к API Яндекс переводчика.")
             stop()
-    lang=json.json()["lang"]
+    try:
+        lang=json.json()["lang"]
+    except KeyError:
+        lang="ru"
     try:
         tts=gTTS(text=body,lang=lang)
     except:
