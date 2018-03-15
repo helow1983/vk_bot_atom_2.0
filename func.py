@@ -11,6 +11,7 @@ self_group_id=settings.self_group_id
 vk=vk_api.VkApi(token=vk_token)
 upload=vk_api.VkUpload(vk)
 files_to_rm=[]
+a=0
 def append_rm(name):
     if name not in files_to_rm:
         files_to_rm.append(name)
@@ -28,9 +29,11 @@ def virustotal(user_id,body):
         print("Неправильный ключ доступа Virustotal.")
         stop()
 def file_send(user_id,name,music=False):
+    global a
     if music==True:
         append_rm(name)
-        new_name="2"+name.replace(".mp3",".ogg")
+        a+=1
+        new_name="2"+str(a)+name.replace(".mp3",".ogg")
         os.system('ffmpeg -n -loglevel quiet -i "'+name+'" -ac 1 "'+new_name+'"')
         try:
             save=upload.audio_message(new_name,group_id=self_group_id)[0]
@@ -66,7 +69,7 @@ def file_send(user_id,name,music=False):
         time.sleep(0.5)
         vk.method("messages.send",{"attachment":"doc"+owner_id+"_"+v_id,"user_id":user_id})
         if music==True:
-            append_rm(new_name)
+            os.remove(new_name)
         if music==False:
             os.remove(name)
 def gtts(user_id,body,num):

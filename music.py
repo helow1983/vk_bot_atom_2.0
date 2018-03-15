@@ -68,27 +68,16 @@ def download_file(url,save_as):
     if os.path.exists(save_as):
         raise FileExistsError("{} already exists".format(file_name))
     request=urllib.request.Request(url)
-    file_part=save_as+".part"
-    if os.path.isfile(file_part):
-        file_part_size=os.path.getsize(file_part)
-        mode="ab"
-        request.add_header("Range","bytes={}-".format(file_part_size))
-    else:
-        file_part_size=0
-        mode="wb"
     response=urllib.request.urlopen(request)
-    file_size=file_part_size+int(response.getheader("Content-Length"))
     os.makedirs(file_dir,exist_ok=True)
     info=("\r[{:< 40 }] "
-          "{:>6.1%} ({} / "+size_to_str(file_size)+")")
-    with open(file_part,mode) as f:
+          "{:>6.1%} ({} / "+size_to_str(0)+")")
+    with open(save_as,"wb") as f:
         while True:
-            chunk=response.read(128*1024)
+            chunk=response.read()
             if not chunk:
                 break
-            file_part_size+=len(chunk)
             f.write(chunk)
-    os.rename(file_part,save_as)
 def _info_js(template):
     def info_loader(**kwargs):
         with urllib.request.urlopen(template.format(**kwargs),timeout=6) as r:
