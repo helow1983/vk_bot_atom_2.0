@@ -38,6 +38,8 @@ except Exception as error:
         input("Для выхода нажмите Enter...")
         os._exit(1)
 vk_counter=0
+vt_counter=0
+ex_counter=0
 yandex_counter=0
 print("Запущено получение сообщений.\n")
 for event in longpoll.listen():
@@ -52,6 +54,8 @@ for event in longpoll.listen():
             t=threading.Thread(target=write,args=(event.user_id,"Запрещённое сообщение."))
         elif text=="/stop" and event.user_id==self_id:
             print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+yandex_counter))
+            print("Команда vt была использована "+str(vt_counter)+" раз.")
+            print("Команда ex была использована "+str(ex_counter)+" раз.")
             stop()
         elif text=="/stop" and event.user_id!=self_id:
             t=threading.Thread(target=write,args=(event.user_id,"Недостаточно прав для выполнения данной команды."))
@@ -61,11 +65,13 @@ for event in longpoll.listen():
         elif text[0:3].lower()=="rv ":
             t=threading.Thread(target=write,args=(event.user_id,text[3:][::-1]))
         elif text[0:3].lower()=="vt ":
+            vt_counter+=1
             t=threading.Thread(target=virustotal,args=(event.user_id,text))
         elif text[0:7].lower()=="rv_tts ":
             vk_counter+=1
             t=threading.Thread(target=gtts,args=(event.user_id,text[7:][::-1],vk_counter))
         elif text[0:3].lower()=="ex ":
+            ex_counter+=1
             t=threading.Thread(target=exchange,args=(event.user_id,text[3:].lower()))
         else:
             vk_counter+=1

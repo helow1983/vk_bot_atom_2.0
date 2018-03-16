@@ -6,28 +6,13 @@ class YmdlError(Exception):
     pass
 class YmdlWrongUrlError(YmdlError,ValueError):
     pass
-class Args:
-    genre=False
-    out="."
-    track_name=None
 YM_URL="https://music.yandex.ru"
 YM_TRACK_SRC_INFO=("https://storage.mds.yandex.net/download-info/{storageDir}/2?format=json")
 YM_TRACK_INFO=YM_URL+"/handlers/track.jsx?track={track}"
 YM_ARTIST_INFO=YM_URL+"/handlers/artist.jsx?artist={artist}&what={what}"
-FLD_COMPOSERS="composers"
-FLD_TRACKNUM="trackNum"
-FLD_VOLUMENUM="volumeNum"
-FMT_TITLE="%t"
-FMT_ARTIST="%a"
-FMT_ALBUM="%A"
-FMT_TRACKN="%n"
-FMT_NTRACKS="%N"
-FMT_YEAR="%y"
-FMT_LABEL="%l"
-DTN_SINGLE="%a - %t"
 _FNAME_TRANS={ord('"'): "''"}
 _FNAME_TRANS.update(str.maketrans("\\/*","--_","<>:|?"))
-def write_id3(mp3_file,track,cover=None):
+def write_id3(mp3_file,track):
     t=mp3.Open(mp3_file)
     if not t.tags:
         t.add_tags()
@@ -35,21 +20,17 @@ def write_id3(mp3_file,track,cover=None):
     t_add=t.tags.add
     t_add(id3.TIT2(encoding=3,text=track["title"]))
     t_add(id3.TPE1(encoding=3,text=track["artists"]))
-    t_add(id3.TCOM(encoding=3,text=track[FLD_COMPOSERS]))
+    t_add(id3.TCOM(encoding=3,text=track["composers"]))
     t_add(id3.TALB(encoding=3,text=album["title"]))
     if "labels" in album:
         t_add(id3.TPUB(encoding=3,text=",".join(l["name"] for l in album["labels"])))
-    if FLD_TRACKNUM in track:
-        tnum="{}/{}".format(track[FLD_TRACKNUM],album["trackCount"])
+    if "trackNum" in track:
+        tnum="{}/{}".format(track["trackNum"],album["trackCount"])
         t_add(id3.TRCK(encoding=3,text=tnum))
-    if FLD_VOLUMENUM in album:
-        t_add(id3.TPOS(encoding=3,text=str(album[FLD_VOLUMENUM])))
+    if "volumeNum" in album:
+        t_add(id3.TPOS(encoding=3,text=str(album["volumeNum"])))
     if "year" in album:
         t_add(id3.TDRC(encoding=3,text=str(album["year"])))
-    if Args.genre:
-        t_add(id3.TCON(encoding=3,text=album["genre"].title()))
-    if cover:
-        t_add(id3.APIC(encoding=3,desc="",mime=cover.mime,type=3,data=cover.data))
     t.tags.update_to_v23()
     t.save(v1=id3.ID3v1SaveOptions.CREATE,v2_version=3)
 def download_file(url,save_as):
@@ -86,29 +67,28 @@ def split_artists(all_artists):
         else:
             artists.append(a["name"])
     return ",".join(artists or composers),",".join(composers)
-def download_track(track,save_path=Args.out,name_mask=None):
+def download_track(track,save_path="."):
     global track_name
-    track["artists"],track[FLD_COMPOSERS]=split_artists(track["artists"])
+    track["artists"],track["composers"]=split_artists(track["artists"])
     if "version" in track:
         track["title"]="{title} ({version})".format_map(track)
     album=track["albums"][0]
     if "version" in album:
         album["title"]="{title} ({version})".format_map(album)
-    if not name_mask:
-        name_mask=Args.track_name or DTN_SINGLE
+    name_mask="%a - %t"
     fmt={}
-    fmt[FMT_TITLE]=track["title"]
-    fmt[FMT_ARTIST]=track["artists"]
-    fmt[FMT_ALBUM]=album["title"]
-    if FLD_TRACKNUM in track:
+    fmt["%t"]=track["title"]
+    fmt["%a"]=track["artists"]
+    fmt["%A"]=album["title"]
+    if "trackNum" in track:
         fill=max(len(str(album["trackCount"])),2)
-        trackn=str(track[FLD_TRACKNUM]).zfill(fill)
+        trackn=str(track["trackNum"]).zfill(fill)
     else:
         trackn=""
-    fmt[FMT_TRACKN]=trackn
-    fmt[FMT_NTRACKS]=str(album["trackCount"])
-    fmt[FMT_YEAR]=str(album.get("year",""))
-    fmt[FMT_LABEL]=",".join(l["name"] for l in album.get("labels",[]))
+    fmt["%n"]=trackn
+    fmt["%N"]=str(album["trackCount"])
+    fmt["%y"]=str(album.get("year",""))
+    fmt["%l"]=",".join(l["name"] for l in album.get("labels",[]))
     for f,t in fmt.items():
         name_mask=name_mask.replace(f,t)
     track_name=name_mask.translate(_FNAME_TRANS).rstrip(". ")
