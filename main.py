@@ -61,7 +61,7 @@ for event in longpoll.listen():
             t=threading.Thread(target=write,args=(event.user_id,"Недостаточно прав для выполнения данной команды."))
         elif text[0:3].lower()=="ym ":
             yandex_counter+=1
-            t=threading.Thread(target=ya_music,args=(event.user_id,text[3:]))
+            t=threading.Thread(target=ya_music,args=(event.user_id,text[3:],yandex_counter))
         elif text[0:3].lower()=="rv ":
             t=threading.Thread(target=write,args=(event.user_id,text[3:][::-1]))
         elif text[0:3].lower()=="vt ":

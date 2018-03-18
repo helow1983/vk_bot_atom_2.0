@@ -11,7 +11,6 @@ self_group_id=settings.self_group_id
 vk=vk_api.VkApi(token=vk_token)
 upload=vk_api.VkUpload(vk)
 files_to_rm=[]
-a=0
 def append_rm(name):
     if name not in files_to_rm:
         files_to_rm.append(name)
@@ -28,12 +27,10 @@ def virustotal(user_id,body):
     except:
         print("Неправильный ключ доступа Virustotal.")
         stop()
-def file_send(user_id,name,music=False):
-    global a
+def file_send(user_id,name,counter,music=False):
     if music==True:
         append_rm(name)
-        a+=1
-        new_name=str(a)+name.replace(".mp3",".ogg")
+        new_name=str(counter)+name.replace(".mp3",".ogg")
         os.system('ffmpeg -n -loglevel quiet -i "'+name+'" -ac 1 "'+new_name+'"')
         try:
             save=upload.audio_message(new_name,group_id=self_group_id)[0]
@@ -90,12 +87,12 @@ def gtts(user_id,body,num):
     vk_file=str(num)+"vk.mp3"
     tts.save(vk_file)
     file_send(user_id,vk_file)
-def ya_music(user_id,body):
+def ya_music(user_id,body,counter):
     track=music.main(body)
     if track=="YmdlWrongUrlError":
         write(user_id,"ym ошибка.")
     else:
-        file_send(user_id,track,music=True)
+        file_send(user_id,track,counter,music=True)
 def exchange(user_id,body):
     try:
         body=body.lower().replace("rub","rur")
