@@ -40,7 +40,7 @@ except Exception as error:
 vk_counter=0
 vt_counter=0
 ex_counter=0
-yandex_counter=0
+ym_counter=0
 print("Запущено получение сообщений.\n")
 for event in longpoll.listen():
     if event.type==VkEventType.MESSAGE_NEW and event.to_me:
@@ -53,15 +53,15 @@ for event in longpoll.listen():
         if text=="":
             t=threading.Thread(target=write,args=(event.user_id,"Запрещённое сообщение."))
         elif text=="/stop" and event.user_id==self_id:
-            print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+yandex_counter))
+            print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+ym_counter))
             print("Команда vt была использована "+str(vt_counter)+" раз.")
             print("Команда ex была использована "+str(ex_counter)+" раз.")
             stop()
         elif text=="/stop" and event.user_id!=self_id:
             t=threading.Thread(target=write,args=(event.user_id,"Недостаточно прав для выполнения данной команды."))
         elif text[0:3].lower()=="ym ":
-            yandex_counter+=1
-            t=threading.Thread(target=ya_music,args=(event.user_id,text[3:],yandex_counter))
+            ym_counter+=1
+            t=threading.Thread(target=ya_music,args=(event.user_id,text[3:],ym_counter))
         elif text[0:3].lower()=="rv ":
             t=threading.Thread(target=write,args=(event.user_id,text[3:][::-1]))
         elif text[0:3].lower()=="vt ":
