@@ -52,10 +52,13 @@ def file_send(user_id,name,counter,music=False):
             except Exception as error:
                 if str(error)=="[15] Access denied: User can't upload docs to this group":
                     print("Невозможно загрузить файл в ВК. Возможно, в настройках группы -> разделы отключены документы.")
+                    os.remove(name)
                     stop()
                 else:
                     print("Непредвиденная ошибка при отправке аудиосообщения.")
-                os.remove(name)
+                    os.remove(name)
+                    return
+
     owner_id=str(save["owner_id"])
     v_id=str(save["id"])
     if save["size"]==288:
@@ -80,10 +83,10 @@ def gtts(user_id,body,num):
     except KeyError:
         lang="ru"
     try:
-        tts=gTTS(text=body,lang=lang)
+        tts=gTTS(body,lang=lang)
     except:
         lang="ru"
-        tts=gTTS(text=body,lang=lang)
+        tts=gTTS(body,lang=lang)
     vk_file=str(num)+"vk.mp3"
     tts.save(vk_file)
     file_send(user_id,vk_file)
