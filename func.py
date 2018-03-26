@@ -106,14 +106,11 @@ def exchange(user_id,body):
 def stop():
     vk.method("messages.markAsRead",{"peer_id":self_id})
     for f in files_to_rm:
-        while True:
-            try:
-                os.remove(f)
-                break
-            except FileNotFoundError:
-                break
-            except PermissionError:
-                print("Не удалось удалить "+f)
-                break
+        try:
+            os.remove(f)
+        except FileNotFoundError:
+            pass
+        except PermissionError:
+            print("Не удалось удалить "+f)
     input("Для выхода нажмите Enter...")
     os._exit(1)
