@@ -4,14 +4,9 @@ class YmdlError(Exception):
     pass
 forbidden_sym={34: "''", 92: 45, 47: 45, 42: 95, 60: None, 62: None, 58: None, 124: None, 63: None}
 def download_file(url,save_as):
-    if os.path.exists(save_as):
-        return
-    request=urllib.request.Request(url)
-    response=urllib.request.urlopen(request)
-    info=("\r[{:< 40 }] "
-          "{:>6.1%} ({} / 0.00 MB)")
+    req=urllib.request.urlopen(url)
     with open(save_as,"wb") as f:
-        f.write(response.read())
+        f.write(req.read())
 def info_loader(template,**kwargs):
     with urllib.request.urlopen(template.format(**kwargs),timeout=6) as r:
         return json.loads(r.read().decode())
@@ -29,17 +24,17 @@ def split_artists(all_artists):
             composers.append(a["name"])
         else:
             artists.append(a["name"])
-    return ",".join(artists or composers),",".join(composers)
+    return ", ".join(artists or composers)
 def download_track(track):
     global track_name
-    track["artists"],track["composers"]=split_artists(track["artists"])
+    track["artists"]=split_artists(track["artists"])
     name_mask="{} - {}".format(track["artists"],track["title"])
     track_name=name_mask.translate(forbidden_sym).rstrip(". ")
-    if not track_name.lower().endswith(".mp3"):
-        track_name+=".mp3"
-    track_path="./"+track_name
+    track_name+=".mp3"
+    if os.path.exists(track_name):
+        return
     try:
-        download_file(get_track_url(track),track_path)
+        download_file(get_track_url(track),track_name)
     except:
         raise YmdlError
 def parse_url(url):
