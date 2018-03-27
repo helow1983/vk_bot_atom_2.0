@@ -2,7 +2,7 @@ import os,urllib.request,urllib.parse,json
 from hashlib import md5
 class YmdlError(Exception):
     pass
-forbidden_sym={34: "''", 92: 45, 47: 45, 42: 95, 60: None, 62: None, 58: None, 124: None, 63: None}
+forbidden_sym={34:"'",92:45,47:45,42:95,60:None,62:None,58:None,124:None,63:None}
 def download_file(url,save_as):
     req=urllib.request.urlopen(url)
     with open(save_as,"wb") as f:
@@ -29,8 +29,7 @@ def download_track(track):
     global track_name
     track["artists"]=split_artists(track["artists"])
     name_mask="{} - {}".format(track["artists"],track["title"])
-    track_name=name_mask.translate(forbidden_sym).rstrip(". ")
-    track_name+=".mp3"
+    track_name=name_mask.translate(forbidden_sym).rstrip(". ")+".mp3"
     if os.path.exists(track_name):
         return
     try:
@@ -42,17 +41,8 @@ def parse_url(url):
     if not (url_info.scheme in ("http","https") and url_info.netloc.startswith("music.yandex")):
         raise YmdlError
     pairs=url_info.path.strip("/").split("/")
-    if len(pairs)%2!=0:
-        what=pairs[-1]
-        if what not in ["albums","tracks","similar"]:
-            raise YmdlError
-    else:
-        what="albums"
     i=iter(pairs)
     info=dict(zip(i,i))
-    info["what"]=what
-    if what=="similar":
-        raise YmdlError
     if "track" in info:
         download_track(info_loader("https://music.yandex.ru/handlers/track.jsx?track={track}",**info)["track"])
     else:
