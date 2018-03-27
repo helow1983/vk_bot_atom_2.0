@@ -89,11 +89,11 @@ def gtts(user_id,body,num):
         tts=gTTS(body,lang=lang)
     vk_file=str(num)+"vk.mp3"
     tts.save(vk_file)
-    file_send(user_id,vk_file)
+    file_send(user_id,vk_file,num)
 def ya_music(user_id,body,counter):
     track=music.main(body)
     if track=="YmdlWrongUrlError":
-        write(user_id,"ym ошибка.")
+        write(user_id,"Неправильный url.")
     else:
         file_send(user_id,track,counter,music=True)
 def exchange(user_id,body):
