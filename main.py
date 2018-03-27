@@ -52,6 +52,14 @@ for event in longpoll.listen():
             print("{} {} написал{}: {}".format(info["first_name"],info["last_name"],"" if info["sex"]==2 else "а","<неподдерживаемые символы>"))
         if text=="":
             t=threading.Thread(target=write,args=(event.user_id,"Запрещённое сообщение."))
+        elif text=="/start":
+            t=threading.Thread(target=write,args=(event.user_id,"""Приветствую тебя, {} {}!
+Я - бот, который может:
+1. Озвучить твоё сообщение(напиши любой текст).
+2. Отправить тебе песню с Яндекс.Музыки(ym ссылка на песню).
+3. Написать текст справа налево(rv любой текст) или озвучить текст справа налево(rv_tts любой текст).
+4. Проверить любую ссылку на вирусы(vt ссылка).
+5. Сообщить курс валютной пары(ex валютная пара, например ex btc-usd)""".format(info["first_name"],info["last_name"])))
         elif text=="/stop" and event.user_id==self_id:
             print("Остановка.\nГолосовых сообщений отправлено: "+str(vk_counter+ym_counter))
             print("Команда vt была использована "+str(vt_counter)+" раз.")
