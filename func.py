@@ -3,7 +3,6 @@ from gtts import gTTS
 spec=importlib.util.spec_from_file_location("settings","settings.py")
 settings=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(settings)
-self_id=settings.self_id
 vk_token=settings.vk_token
 virustotal_key=settings.virustotal_key
 yandex_key=settings.yandex_key
@@ -104,7 +103,6 @@ def exchange(user_id,body):
     except:
         write(user_id,"Неправильная валютная пара или ошибка на сервере Cryptonator.")
 def stop():
-    vk.method("messages.markAsRead",{"peer_id":self_id})
     for f in files_to_rm:
         try:
             os.remove(f)
@@ -113,4 +111,3 @@ def stop():
         except PermissionError:
             print("Не удалось удалить "+f)
     input("Для выхода нажмите Enter...")
-    os._exit(1)
